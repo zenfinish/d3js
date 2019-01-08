@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Pokemon Data</title>
+    <style>
+
+        body {
+          font: 10px sans-serif;
+        }
+        
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+        
+        .bar {
+          fill: rgb(10, 232, 248);
+        }
+        
+        .bar:hover {
+          fill: rgb(243, 239, 28) ;
+        }
+        
+        .x.axis path {
+          display: none;
+        }
+        
+        .d3-tip {
+          line-height: 1;
+          font-weight: bold;
+          padding: 12px;
+          background: rgba(0, 0, 0, 0.8);
+          color: #fff;
+          border-radius: 2px;
+        }
+        
+        /* Creates a small triangle extender for the tooltip */
+        .d3-tip:after {
+          box-sizing: border-box;
+          display: inline;
+          font-size: 10px;
+          line-height: 1;
+          color: rgba(0, 0, 0, 0.8);
+          content: "\25BC";
+          position: absolute;
+          text-align: center;
+        }
+        
+        /* Style northward tooltips differently */
+        .d3-tip.n:after {
+          margin: -1px 0 0 0;
+          top: 100%;
+          left: 0;
+        }
+        </style>
+</head>
+<body>
+    <h1>Jumlah Pokemon Berdasarkan Element Kekuatan<br><a href="https://www.kaggle.com/vishalsubbiah/pokemon-images-and-types" target="_blank">https://www.kaggle.com/vishalsubbiah/pokemon-images-and-types</a></h1>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+    <script>
+    
+    let margin = {top: 40, right: 20, bottom: 30, left: 40},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+    
+    let x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+    
+    let y = d3.scale.linear()
+        .range([height, 0]);
+    
+    let xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+    
+    let yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+    
+    let tip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+        return "<strong>Jumlah:</strong> <span style='color:red'>" + d.data.length + "</span>";
+      })
+    
+    let svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    svg.call(tip);
+    
+    d3.csv("pokemon.csv", function(error, data) {
+      
+        let result = data.reduce((accumulator, currentValue) => {
+            if (accumulator[currentValue.Type1] === undefined) {
+                accumulator[currentValue.Type1] = [currentValue];
+            } else {
+                accumulator[currentValue.Type1].push(currentValue);
+            }
+            return accumulator;
+        }, {});
+
+        let result2 = [];
+        Object.entries(result).forEach(data => {
+            let obj = {};
+            obj.name = data[0];
+            obj.data = data[1];
+            result2.push(obj);
+        });
+
+      
+      x.domain(result2.map(function(d) { return d.name; }));
+      y.domain([0, d3.max(result2, function(d) { return d.data.length; })]);
+    
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis);
+    
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Jumlah Pokemon");
+    
+      svg.selectAll(".bar")
+          .data(result2)
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return x(d.name); })
+          .attr("width", x.rangeBand())
+          .attr("y", function(d) { return y(d.data.length); })
+          .attr("height", function(d) { return height - y(d.data.length); })
+          .on('mouseover', tip.show)
+          .on('mouseout', tip.hide)
+          .on('click', function(d) { return detail(d.data); })
+    
+    });
+
+    function detail(datanya) {
+        console.log('masuk', datanya)
+        d3.select('.detail').remove();
+        
+        var detail = d3.select("body").append("div")
+            .attr("class", "detail")
+
+        detail.selectAll()
+            .data(datanya)
+            .enter().append("img")
+            .attr("src", function(d) { return `images/${d.Name}.png`; })
+    }
+    
+    </script>   
+</body>
+</html>
